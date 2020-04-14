@@ -6,7 +6,7 @@
 	<groupId>com.example</groupId>
 	<artifactId>easy-notes</artifactId>
 	<version>1.0.0</version>
-	<packaging>jar</packaging>
+	<packaging>war</packaging>
 
 	<name>easy-notes</name>
 	<description>Rest API for a Simple Note Taking Application</description>
@@ -57,6 +57,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>ROOT</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
