@@ -1,0 +1,150 @@
+# docker build -t prasad1210/tomcat-custom:9.0.35.1-alpine-11.0.7 . -f Dockerfile-tomcat-jre --no-cache
+FROM alpine:latest AS stage-0
+RUN set -eux;\
+ apk --no-cache --virtual add openjdk11
+    #--repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+WORKDIR /usr/lib/jvm/default-jvm/jre/bin/
+RUN set -eux;\
+    ./jlink --output jre --compress=2 --no-header-files --no-man-pages --module-path ../jmods --add-modules java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.smartcardio,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto
+
+
+
+FROM alpine:latest
+
+MAINTAINER Prasad CH<prasad.learner@gmail.com>
+
+# Install dependencies:
+#  ca-certificates-cacert-20191127-r1 x86_64: for certificate management to support SSL
+#  openjdk11-jre-11.0.5_p10-r0: OpenJDK built by Simon Frankenberger <simon@fraho.eu> from https://hg.openjdk.java.net/jdk-updates/jdk11u
+#  fontconfig-2.13.1-r2 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.10.1-r0 x86_64: To support freetype fonts
+#  Tomcat: Run a Java Container
+# Additional dependencies for system commands used by above components:
+#  musl-1.1.24-r2 x86_64 {musl} (MIT) [installed]
+#  libbz2-1.0.8-r1 x86_64 {bzip2} (bzip2-1.0.6) [installed]
+#  zlib-1.2.11-r3 x86_64 {zlib} (Zlib) [installed]
+#  apk-tools-2.10.5-r0 x86_64 {apk-tools} (GPL2) [installed]
+#  musl-utils-1.1.24-r2 x86_64 {musl} (MIT BSD GPL2+) [installed]
+#  libssl1.1-1.1.1g-r0 x86_64 {openssl} (OpenSSL) [installed]
+#  alpine-baselayout-3.2.0-r3 x86_64 {alpine-baselayout} (GPL-2.0-only) [installed]
+#  libpng-1.6.37-r1 x86_64 {libpng} (Libpng) [installed]
+#  ca-certificates-20191127-r2 x86_64 {ca-certificates} (MPL-2.0 GPL-2.0-or-later) [installed]
+#  alpine-keys-2.1-r2 x86_64 {alpine-keys} (MIT) [installed]
+#  busybox-1.31.1-r9 x86_64 {busybox} (GPL-2.0-only) [installed]
+#  libuuid-2.34-r1 x86_64 {util-linux} (GPL-2.0 GPL-2.0-or-later LGPL-2.0-or-later BSD Public-Domain) [installed]
+#  scanelf-1.2.4-r0 x86_64 {pax-utils} (GPL-2.0-only) [installed]
+#  libc-utils-0.7.2-r0 x86_64 {libc-dev} (BSD) [installed]
+#  libtls-standalone-2.9.1-r0 x86_64 {libtls-standalone} (ISC) [installed]
+#  ssl_client-1.31.1-r9 x86_64 {busybox} (GPL-2.0-only) [installed]
+#  expat-2.2.9-r1 x86_64 {expat} (MIT) [installed]
+#  libcrypto1.1-1.1.1g-r0 x86_64 {openssl} (OpenSSL) [installed]
+#
+
+# https://adoptopenjdk.net/installation.html#x64_linux-jre
+RUN mkdir -p /usr/lib/jvm
+COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre /usr/lib/jvm/default-jre
+ENV PATH=/usr/lib/jvm/default-jre/bin:$PATH
+ENV JAVA_HOME=/usr/lib/jvm/default-jre/
+ENV JAVA_VERSION=11.0.7+11-alpine-r1
+
+RUN set -eux;\
+    apk update \
+    # Now Add Support for cacerts
+    # https://hackernoon.com/alpine-docker-image-with-secured-communication-ssl-tls-go-restful-api-128eb6b54f1f
+    && apk add --no-cache ca-certificates\
+
+    # Now Add Support for UI/Font configurations
+    # java.lang.UnsatisfiedLinkError: /usr/local/openjdk-11/lib/libfontmanager.so: libfreetype.so.6: cannot open shared object file: No such file or directory
+    # java.lang.NoClassDefFoundError: Could not initialize class sun.awt.X11FontManager
+    # https://github.com/docker-library/openjdk/pull/235#issuecomment-424466077
+     \fontconfig freetype\
+
+    && rm -rf /var/cache/apk/*
+
+# COPY ./org-cacert-bundle.crt /usr/local/share/ca-certificates/mycert.crt
+# COPY --from stage-0 /usr/local/share/ca-certificates /usr/local/share/ca-certificates
+RUN set -eux;\
+    chmod 755 /usr/local/share/ca-certificates\
+    && update-ca-certificates\
+    # Load Organisational fonts
+    && mkdir -p /usr/share/fonts/default/TrueType
+# COPY --from stage-0 /tmp/custom-fonts/ /usr/share/fonts/default/TrueType
+
+
+# Inspired from https://github.com/docker-library/tomcat/blob/d570ad0cee10e4526bcbb03391b2c0e322b59313/9.0/jdk11/openjdk-slim/Dockerfile
+ENV CATALINA_HOME /usr/local/tomcat
+ENV PATH $CATALINA_HOME/bin:$PATH
+RUN mkdir -p "$CATALINA_HOME"
+
+WORKDIR $CATALINA_HOME
+
+# let "Tomcat Native" live somewhere isolated
+ENV TOMCAT_NATIVE_LIBDIR $CATALINA_HOME/native-jni-lib
+ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
+
+# see https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/KEYS
+# see also "update.sh" (https://github.com/docker-library/tomcat/blob/master/update.sh)
+ENV GPG_KEYS 05AB33110949707C93A279E3D3EFE6B686867BA6 07E48665A34DCAFAE522E5E6266191C37C037D42 47309207D818FFD8DCD3F83F1931D684307A10A5 541FBE7D8F78B25E055DDEE13C370389288584E7 61B832AC2F1C5A90F0F9B00A1C506407564C17A3 79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED 9BA44C2621385CB966EBA586F72C284D731FABEE A27677289986DB50844682F8ACB77FC2E86E29AC A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243 F3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE F7DA48BB64BCB84ECBA7EE6935CD23C10D498E23
+
+ENV TOMCAT_MAJOR 9
+ENV TOMCAT_VERSION 9.0.35
+ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-9/v9.0.35/bin/apache-tomcat-9.0.35.tar.gz
+ENV TOMCAT_SHA512 0db27185d9fc3174f2c670f814df3dda8a008b89d1a38a5d96cbbe119767ebfb1cf0bce956b27954aee9be19c4a7b91f2579d967932207976322033a86075f98
+
+# Install Tomcat
+RUN set -eux;\
+    wget "$TOMCAT_DOWNLOAD_URL"\
+    && echo "$TOMCAT_SHA512 *apache-tomcat-9.0.35.tar.gz" | sha512sum -c -\
+    && mkdir -p /usr/local/tomcat\
+    && tar -xf apache-tomcat-9.0.35.tar.gz --strip-components=1\
+    && rm bin/*.bat\
+    && rm apache-tomcat-9.0.35.tar.gz*\
+    && rm -rf webapps\
+    && mkdir webapps\
+    && find ./bin/ -name '*.sh' -exec sed -ri 's|^#!/bin/sh$|#!/usr/bin/env sh|' '{}' + \
+    && chmod -R +rX . \
+    && chmod 777 logs temp work
+
+#Create config and log folders
+RUN mkdir -p ${CATALINA_HOME}/conf/ ${CATALINA_HOME}/logs/ ${CATALINA_HOME}/config/
+
+# Copy Custom init scripts if required
+# COPY bin/setenv.sh ${CATALINA_HOME}/bin/setenv.sh
+# RUN chmod 750 ${CATALINA_HOME}/bin/setenv.sh
+
+# Remove default Tomcat installation files
+RUN rm -rf ${CATALINA_HOME}/webapps/*
+# Copy any additional organisational default files to override tomcat default config files
+
+
+# User Management
+# Add custom group tomcat with 61000 as a groupid to avoid conflicts with any existing groups
+RUN addgroup -g 61000 tomcat
+
+# Add custom user tomcat with same uid 61000 as gid to avoid conflict with exist user
+# User with no home directory, no password, group as tomcat and username as tomcat
+RUN adduser -H -D -G tomcat -u 61000 tomcat
+
+# We put the tomcat user as the owner of the folder of tomcat to limit access to tomcat process on container resources
+RUN set -eux;\
+    chown -R tomcat:tomcat /usr/local/tomcat\
+    # Users cannot modify configuration of tomcat
+    && chmod -R g+r /usr/local/tomcat/conf\
+    # Users can modify the other folders
+    && chmod -R g+w /usr/local/tomcat/logs\
+    && chmod -R g+w /usr/local/tomcat/temp\
+    && chmod -R g+w /usr/local/tomcat/webapps\
+    && chmod -R g+w /usr/local/tomcat/work\
+    # Activate the sticky-bit for new files keep permissions defined:
+    && chmod -R g+s /usr/local/tomcat/conf\
+    && chmod -R g+s /usr/local/tomcat/logs\
+    && chmod -R g+s /usr/local/tomcat/temp\
+    && chmod -R g+s /usr/local/tomcat/webapps\
+    && chmod -R g+s /usr/local/tomcat/work
+
+# Set user as tocmat by uid to be compatible with kubernetes psp
+USER 61000
+
+EXPOSE 8080
+
+CMD ["catalina.sh", "run"]
