@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.6_10
+FROM alpine:jre-11.0.6
 
 # Inspired from https://github.com/docker-library/tomcat/blob/d570ad0cee10e4526bcbb03391b2c0e322b59313/9.0/jdk11/openjdk-slim/Dockerfile
 ENV CATALINA_HOME /usr/local/tomcat
@@ -27,13 +27,16 @@ RUN wget "https://downloads.apache.org/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat
  && rm apache-tomcat-9.0.34.tar.gz*\
  && rm -rf webapps\
  && mkdir webapps\
- && find ./bin/ -name '*.sh' -exec sed -ri 's|^#!/bin/sh$|#!/usr/bin/env bash|' '{}' + \
+ && find ./bin/ -name '*.sh' -exec sed -ri 's|^#!/bin/sh$|#!/usr/bin/env sh|' '{}' + \
  && chmod -R +rX . \
  && chmod 777 logs temp work
 
 
 # Copy war file to webapps
 COPY target/ROOT.war webapps/ROOT.war
+
+# TEMP
+ENV JRE_HOME=/usr/lib/jvm/jre-11.0.6/
 
 EXPOSE 8080
 CMD ["catalina.sh", "run"]

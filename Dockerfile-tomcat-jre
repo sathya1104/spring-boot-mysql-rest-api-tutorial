@@ -13,32 +13,12 @@ FROM alpine:latest
 
 MAINTAINER Prasad CH<prasad.learner@gmail.com>
 
-# Install dependencies:
+# Installed main dependencies:
 #  ca-certificates-cacert-20191127-r1 x86_64: for certificate management to support SSL
-#  openjdk11-jre-11.0.5_p10-r0: OpenJDK built by Simon Frankenberger <simon@fraho.eu> from https://hg.openjdk.java.net/jdk-updates/jdk11u
+#  openjdk11-jre-11.0.5_p10-r0: OpenJDK built by Timo Teras <timo.teras@iki.fi> from https://icedtea.classpath.org/
 #  fontconfig-2.13.1-r2 x86_64 : For supporting UI/ Fonts for reporting purposes
 #  freetype-2.10.1-r0 x86_64: To support freetype fonts
 #  Tomcat: Run a Java Container
-# Additional dependencies for system commands used by above components:
-#  musl-1.1.24-r2 x86_64 {musl} (MIT) [installed]
-#  libbz2-1.0.8-r1 x86_64 {bzip2} (bzip2-1.0.6) [installed]
-#  zlib-1.2.11-r3 x86_64 {zlib} (Zlib) [installed]
-#  apk-tools-2.10.5-r0 x86_64 {apk-tools} (GPL2) [installed]
-#  musl-utils-1.1.24-r2 x86_64 {musl} (MIT BSD GPL2+) [installed]
-#  libssl1.1-1.1.1g-r0 x86_64 {openssl} (OpenSSL) [installed]
-#  alpine-baselayout-3.2.0-r3 x86_64 {alpine-baselayout} (GPL-2.0-only) [installed]
-#  libpng-1.6.37-r1 x86_64 {libpng} (Libpng) [installed]
-#  ca-certificates-20191127-r2 x86_64 {ca-certificates} (MPL-2.0 GPL-2.0-or-later) [installed]
-#  alpine-keys-2.1-r2 x86_64 {alpine-keys} (MIT) [installed]
-#  busybox-1.31.1-r9 x86_64 {busybox} (GPL-2.0-only) [installed]
-#  libuuid-2.34-r1 x86_64 {util-linux} (GPL-2.0 GPL-2.0-or-later LGPL-2.0-or-later BSD Public-Domain) [installed]
-#  scanelf-1.2.4-r0 x86_64 {pax-utils} (GPL-2.0-only) [installed]
-#  libc-utils-0.7.2-r0 x86_64 {libc-dev} (BSD) [installed]
-#  libtls-standalone-2.9.1-r0 x86_64 {libtls-standalone} (ISC) [installed]
-#  ssl_client-1.31.1-r9 x86_64 {busybox} (GPL-2.0-only) [installed]
-#  expat-2.2.9-r1 x86_64 {expat} (MIT) [installed]
-#  libcrypto1.1-1.1.1g-r0 x86_64 {openssl} (OpenSSL) [installed]
-#
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
 RUN mkdir -p /usr/lib/jvm
