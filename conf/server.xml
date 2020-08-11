@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Server port="${port.shutdown}" shutdown="SHUTDOWN">
+    <Listener className="org.apache.catalina.startup.VersionLoggerListener"/>
+    <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
+    <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener"/>
+    <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener"/>
+
+    <Service name="Catalina">
+        <Connector port="${port.http}"
+                   address="0.0.0.0"
+                   protocol="HTTP/1.1"
+                   connectionTimeout="20000"
+                   redirectPort="${port.https}"
+                   enableLookups="false"
+                   compression="off"
+                   maxConnections="8192"
+                   maxThreads="1000"
+                   maxHttpHeaderSize="8192"
+                   tcpNoDelay="true"
+                   server="WebServer"
+                   allowTrace="false"
+                   xpoweredBy="false"
+                   relaxedQueryChars="[,]"/>
+
+        <Engine name="Catalina" defaultHost="localhost">
+            <Realm className="org.apache.catalina.realm.LockOutRealm"
+                   failureCount="5"
+                   lockOutTime="600"
+                   cacheSize="1000"
+                   cacheRemovalWarningTime="3600">
+            </Realm>
+
+            <Host name="localhost" appBRase="webapps" unpackWARs="true" autoDeploy="true">
+                <Valve className="org.apache.catalina.valves.AccessLogValve"
+                       directory="/proc/self/fd"
+                       prefix="1"
+                       suffix=""
+                       rotatable="false"
+                       pattern="[f1] %h $l %u %t &quot;%r&quot; $s %b D"/>
+            </Host>
+        </Engine>
+    </Service>
+</Server>

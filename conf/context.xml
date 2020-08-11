@@ -1,0 +1,5 @@
+<Context useHttpOnly="true">
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+    <Manager className="org.apache.catalina.session.StandardManager" secureRandomClass="java.security.SecureRandom" />
+    <CookieProcessor className="org.apache.tomcat.util.http.LegacyCookieProcessor" />
+</Context>

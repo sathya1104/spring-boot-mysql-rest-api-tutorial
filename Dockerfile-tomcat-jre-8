@@ -1,21 +1,22 @@
-# docker build -t prasad1210/tomcat-custom:9.0.35.1-alpine-jre-1.8.0-242-b08 . -f Dockerfile-tomcat-jre-8 --no-cache
+# docker build -t prasad1210/tomcat-custom:9.0.37.0-alpine-jre-1.8.0-242-b08 . -f Dockerfile-tomcat-jre-8 --no-cache
 FROM alpine:latest
-
-MAINTAINER Prasad CH<prasad.learner@gmail.com>
+MAINTAINER "Prasad CH <prasad.learner@gmail.com>"
+ENV OS_RELEASE="Alpine Linux v3.12"
 
 # Installed main dependencies:
 #  ca-certificates-cacert-20191127-r1 x86_64: for certificate management to support SSL
-#  openjdk8-jre-8.242.08-r2: OpenJDK built by Simon Frankenberger <simon@fraho.eu> from https://hg.openjdk.java.net/jdk-updates/jdk11u
+#  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
+#                               https://git.alpinelinux.org/aports/commit/?id=77cd8637f03e06b9bd744c787f23db02b2f476f7
 #  fontconfig-2.13.1-r2 x86_64 : For supporting UI/ Fonts for reporting purposes
 #  freetype-2.10.1-r0 x86_64: To support freetype fonts
-#  Tomcat: Run a Java Container
+#  Tomcat: Java Runtime Container
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
-RUN mkdir -p /usr/lib/jvm/jre/bin
+# Set JRE_HOME not JAVA_HOME as we don't intend to run tomcat in debug mode
+ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 RUN apk --no-cache --virtual add openjdk8-jre --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
-ENV PATH=/usr/lib/jvm/default-jre/bin:$PATH
-ENV JAVA_HOME=/usr/lib/jvm/default-jre/
-ENV JAVA_VERSION=11.0.7+11-alpine-r1
+ENV PATH=${JRE_HOME}/bin:$PATH
+ENV JAVA_VERSION=1.8.0_252
 
 RUN set -eux;\
     apk update \
@@ -57,18 +58,18 @@ ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
 ENV GPG_KEYS 05AB33110949707C93A279E3D3EFE6B686867BA6 07E48665A34DCAFAE522E5E6266191C37C037D42 47309207D818FFD8DCD3F83F1931D684307A10A5 541FBE7D8F78B25E055DDEE13C370389288584E7 61B832AC2F1C5A90F0F9B00A1C506407564C17A3 79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED 9BA44C2621385CB966EBA586F72C284D731FABEE A27677289986DB50844682F8ACB77FC2E86E29AC A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243 F3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE F7DA48BB64BCB84ECBA7EE6935CD23C10D498E23
 
 ENV TOMCAT_MAJOR 9
-ENV TOMCAT_VERSION 9.0.35
-ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-9/v9.0.35/bin/apache-tomcat-9.0.35.tar.gz
-ENV TOMCAT_SHA512 0db27185d9fc3174f2c670f814df3dda8a008b89d1a38a5d96cbbe119767ebfb1cf0bce956b27954aee9be19c4a7b91f2579d967932207976322033a86075f98
+ENV TOMCAT_VERSION 9.0.37
+ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-9/v9.0.37/bin/apache-tomcat-9.0.37.tar.gz
+ENV TOMCAT_SHA512 077c3e69553b9388b5cdf46b6d204e895d69629a4ec8dd8cf13eb2ee97a04f50e70478fee4f2f91e8809b85bdcd3656188b00d17165c86cf6113ded18729ba06
 
 # Install Tomcat
 RUN set -eux;\
-    wget "$TOMCAT_DOWNLOAD_URL"\
-    && echo "$TOMCAT_SHA512 *apache-tomcat-9.0.35.tar.gz" | sha512sum -c -\
+    wget "$TOMCAT_DOWNLOAD_URL" -O apache-tomcat.tar.gz\
+    && echo "$TOMCAT_SHA512 *apache-tomcat.tar.gz" | sha512sum -c -\
     && mkdir -p /usr/local/tomcat\
-    && tar -xf apache-tomcat-9.0.35.tar.gz --strip-components=1\
+    && tar -xf apache-tomcat.tar.gz --strip-components=1\
     && rm bin/*.bat\
-    && rm apache-tomcat-9.0.35.tar.gz*\
+    && rm apache-tomcat.tar.gz*\
     && rm -rf webapps\
     && mkdir webapps\
     && find ./bin/ -name '*.sh' -exec sed -ri 's|^#!/bin/sh$|#!/usr/bin/env sh|' '{}' + \
@@ -80,12 +81,14 @@ RUN mkdir -p ${CATALINA_HOME}/conf/ ${CATALINA_HOME}/logs/ ${CATALINA_HOME}/conf
 
 # Copy Custom init scripts if required
 # COPY bin/setenv.sh ${CATALINA_HOME}/bin/setenv.sh
-# RUN chmod 750 ${CATALINA_HOME}/bin/setenv.sh
 
 # Remove default Tomcat installation files
 RUN rm -rf ${CATALINA_HOME}/webapps/*
+# COPY conf/context.xml           $CATALINA_HOME/conf/context.xml
+# COPY conf/server.xml            $CATALINA_HOME/conf/server.xml
+# COPY conf/web.xml               $CATALINA_HOME/conf/web.xml
+# COPY conf/logging.properties    $CATALINA_HOME/conf/logging.properties
 # Copy any additional organisational default files to override tomcat default config files
-
 
 # User Management
 # Add custom group tomcat with 61000 as a groupid to avoid conflicts with any existing groups
@@ -112,9 +115,13 @@ RUN set -eux;\
     && chmod -R g+s /usr/local/tomcat/webapps\
     && chmod -R g+s /usr/local/tomcat/work
 
+# Set Execute permissions on init script
+# RUN chown tomcat:tomcat ${CATALINA_HOME}/bin/setenv.sh
+# RUN chmod 750 ${CATALINA_HOME}/bin/setenv.sh
+
 # Set user as tocmat by uid to be compatible with kubernetes psp
 USER 61000
 
 EXPOSE 8080
 
-CMD ["catalina.sh", "run"]
+CMD [ "catalina.sh", "run" ]
