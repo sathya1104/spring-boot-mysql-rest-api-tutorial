@@ -13,11 +13,11 @@ MAINTAINER "Prasad CH <prasad.learner@gmail.com>"
 ENV OS_RELEASE="Alpine Linux v3.12"
 
 # Installed main dependencies:
-#  ca-certificates-bundle-20191127-r2 x86_64: for certificate management to support SSL
+#  ca-certificates-bundle-20191127-r4 x86_64: for certificate management to support SSL
 #  openjdk11: OpenJDK built by Simon Frankenberger <simon@fraho.eu> from https://hg.openjdk.java.net/jdk-updates/jdk11u
 #                               https://git.alpinelinux.org/aports/commit/?id=b85efc501595136485aea134946fa459bff115b0
-#  fontconfig-2.13.1-r2 x86_64 : For supporting UI/ Fonts for reporting purposes
-#  freetype-2.10.4-r0 x86_64: To support freetype fonts
+#  freetype-2.10.4-r0 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  fontconfig-2.13.1-r2 x86_64: To support freetype fonts
 #  Tomcat: Java Runtime Container
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
@@ -25,10 +25,11 @@ ENV OS_RELEASE="Alpine Linux v3.12"
 ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=11.0.9+11-alpine-r1
+ENV JAVA_VERSION=11.0.9+11-alpine-r0
 
 RUN set -eux;\
     apk update \
+    && apk upgrade \
     # Now Add Support for cacerts
     # https://hackernoon.com/alpine-docker-image-with-secured-communication-ssl-tls-go-restful-api-128eb6b54f1f
     && apk add --no-cache ca-certificates\
