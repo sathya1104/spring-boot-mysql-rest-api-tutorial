@@ -1,14 +1,14 @@
-# docker build -t prasad1210/tomcat-custom:9.0.41.0-alpine-jre-1.8.0-272-10-r4 . -f Dockerfile-tomcat-jre-8 --no-cache
+# docker build -t prasad1210/tomcat-custom:9.0.43.0-alpine-jre-1.8.0-282-b08 . -f Dockerfile-tomcat-jre-8 --no-cache
 FROM alpine:latest
 MAINTAINER "Prasad CH <prasad.learner@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.12"
+ENV OS_RELEASE="Alpine Linux v3.13"
 
 # Installed main dependencies:
-#  ca-certificates-bundle-20191127-r2 x86_64: for certificate management to support SSL
+#  ca-certificates-bundle-20191127-r5 x86_64: for certificate management to support SSL
 #  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
 #                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
-#  fontconfig-2.13.1 x86_64 : For supporting UI/ Fonts for reporting purposes
-#  freetype-2.10.4-r0 x86_64: To support freetype fonts
+#  fontconfig-2.13.1-r3 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.10.4-r1 x86_64: To support freetype fonts
 #  Tomcat: Java Runtime Container
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
@@ -16,7 +16,7 @@ ENV OS_RELEASE="Alpine Linux v3.12"
 ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 RUN apk --no-cache --virtual add openjdk8-jre --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=1.8.0_272-b10
+ENV JAVA_VERSION=1.8.0_282-b08
 
 RUN set -eux;\
     apk update \
@@ -59,7 +59,7 @@ ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
 ENV GPG_KEYS 05AB33110949707C93A279E3D3EFE6B686867BA6 07E48665A34DCAFAE522E5E6266191C37C037D42 47309207D818FFD8DCD3F83F1931D684307A10A5 541FBE7D8F78B25E055DDEE13C370389288584E7 61B832AC2F1C5A90F0F9B00A1C506407564C17A3 79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED 9BA44C2621385CB966EBA586F72C284D731FABEE A27677289986DB50844682F8ACB77FC2E86E29AC A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243 F3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE F7DA48BB64BCB84ECBA7EE6935CD23C10D498E23
 
 ENV TOMCAT_MAJOR 9
-ENV TOMCAT_VERSION 9.0.41
+ENV TOMCAT_VERSION 9.0.43
 ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
 ENV TOMCAT_SHA512_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
 # https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
