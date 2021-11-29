@@ -1,4 +1,4 @@
-# docker build -t sathya/tomcat-custom:9.0.53.0-alpine-jre-1.8.0-302-08-r0 . -f Dockerfile-tomcat-jre-8-curl --no-cache
+# docker build -t sathya/tomcat-custom:9.0.55.0-alpine-jre-1.8.0-302-08-r0 . -f Dockerfile-tomcat-jre-8-curl --no-cache
 FROM alpine:latest
 MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
 ENV OS_RELEASE="Alpine Linux v3.14"
@@ -62,11 +62,11 @@ ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
 ENV GPG_KEYS 48F8E69F6390C9F25CFEDCD268248959359E722B A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243
 
 ENV TOMCAT_MAJOR 9
-ENV TOMCAT_VERSION 9.0.53
+ENV TOMCAT_VERSION 9.0.55
 ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
 ENV TOMCAT_SHA512_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
 # https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
-# ENV TOMCAT_SHA512 df71834116f506b77cea9d9f8ac66ed65e74754e202df9f337f6559f81daf6490b0d569dd63f3eb46826b85ca899b79c754c2dd3d21927bed41d773c70253c4f
+# ENV TOMCAT_SHA512 a0c480b8bba09069bda3b57f54e658450a59d799474ad587dead0ffbf5074c16ee3f9f9c13312d0ff3227c7034589dabf25941fbd672838e9baeee9661e024dc 
 
 # Install Tomcat
 RUN set -eux;\
