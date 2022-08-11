@@ -1,28 +1,63 @@
-# docker build -t bnppwmis/tomcat-custom:9.0.65.0-alpine-jre-1.8.0-322-06-r0 . -f Dockerfile-tomcat-jre-8-curl --no-cache
+# docker build -t sathya1104/tomcat-custom:9.0.55.0-alpine-jre-17.0.0-r1 . -f Dockerfile-tomcat-jre-adoptium-temurin-jdk17 --no-cache
+
+FROM alpine:latest AS stage-0
+
+# Download jdk binary from temurin github (in future add sha checksum verification)
+# Use jlink and we can use it remove more default modules and reduce image size
+
+# see https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/KEYS
+# see also "update.sh" (https://github.com/docker-library/tomcat/blob/master/update.sh)
+# ENV GPG_KEYS 05AB33110949707C93A279E3D3EFE6B686867BA6 07E48665A34DCAFAE522E5E6266191C37C037D42 47309207D818FFD8DCD3F83F1931D684307A10A5 541FBE7D8F78B25E055DDEE13C370389288584E7 61B832AC2F1C5A90F0F9B00A1C506407564C17A3 79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED 9BA44C2621385CB966EBA586F72C284D731FABEE A27677289986DB50844682F8ACB77FC2E86E29AC A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243 F3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE F7DA48BB64BCB84ECBA7EE6935CD23C10D498E23
+
+
+ENV JDK_MAJOR 17
+ENV JDK_VERSION 17_35
+ENV JDK_DOWNLOAD_URL https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17%2B35/OpenJDK17-jdk_x64_alpine-linux_hotspot_17_35.tar.gz
+ENV JDK_SHA512_URL   https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17%2B35/OpenJDK17-jdk_x64_alpine-linux_hotspot_17_35.tar.gz.sha256.txt
+# https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17%2B35/OpenJDK17-jdk_x64_alpine-linux_hotspot_17_35.tar.gz.sha256.txt
+# ENV TOMCAT_SHA512 307ca646bac267e529fb0862278f7133fe80813f0af64a44aed949f4c7a9a98aeb9bd7f08b087645b40c6fefdd3a7fe519e4858a3dbf0a19c38c53704f92b575
+
+WORKDIR /root
+
+# Download JDK
+RUN set -eux;\
+    mkdir -p target/alpine-linux/x64/hotspot/ \
+    && wget "$JDK_DOWNLOAD_URL" -qO target/alpine-linux/x64/hotspot/OpenJDK17-jdk_x64_alpine-linux_hotspot_${JDK_VERSION}.tar.gz\
+#    && wget -qO- "$JDK_SHA512_URL" | sha512sum -c -\
+    && tar -xf target/alpine-linux/x64/hotspot/OpenJDK17-jdk_x64_alpine-linux_hotspot_${JDK_VERSION}.tar.gz --strip-components=1
+
+RUN set -eux \
+    && ./bin/jlink --output /usr/lib/jvm/default-jvm/jre/bin/jre --compress=2 --no-header-files --no-man-pages --strip-java-debug-attributes --module-path ../jmods --add-modules jdk.xml.dom,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.smartcardio,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto
+
 FROM alpine:latest
 MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.16"
+ENV OS_RELEASE="Alpine Linux v3.14.2"
 
 # Installed main dependencies:
-#  ca-certificates-20211220-r0 x86_64:  for certificate management to support SSL
-#  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
-#                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
-#  fontconfig-2.14.0-r0 x86_64 : For supporting UI/ Fonts for reporting purposes
-#  freetype-2.12.1-r0 x86_64: To support freetype fonts
+#  ca-certificates-20191127-r5 x86_64: for certificate management to support SSL
+#  openjdk11: OpenJDK 64-Bit Server VM Temurin-17+35 (build 17+35, mixed mode)
+#  fontconfig-2.13.1-r4 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.10.4-r1 x86_64: To support freetype fonts
 #  Tomcat: Java Runtime Container
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
 # Set JRE_HOME not JAVA_HOME as we don't intend to run tomcat in debug mode
 ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
-RUN apk --no-cache --virtual add openjdk8-jre --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
+COPY Dockerfile-tomcat-jre-adoptium-temurin-jdk17 /tmp
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=1.8.0_322-b06
+ENV JAVA_VERSION=17+35
+
 RUN set -eux;\
-    apk update \
-    && apk upgrade \
+
+    # CIS-4.7 Ensure update instructions are not use alone in the Dockerfile
+    # apk update \
+    # && apk upgrade \
+    # && apk add --no-cache ca-certificates\
+
     # Now Add Support for cacerts
     # https://hackernoon.com/alpine-docker-image-with-secured-communication-ssl-tls-go-restful-api-128eb6b54f1f
-    && apk add --no-cache ca-certificates\
+    apk add --no-cache ca-certificates\
 
     # Now Add Support for UI/Font configurations
     # java.lang.UnsatisfiedLinkError: /usr/local/openjdk-11/lib/libfontmanager.so: libfreetype.so.6: cannot open shared object file: No such file or directory
@@ -31,17 +66,11 @@ RUN set -eux;\
      \fontconfig freetype\
 
     && rm -rf /var/cache/apk/*
-
-RUN apk add --update curl && \
-    apk add --update iputils && \
-    apk add --update netcat-openbsd && \
-	apk add --update tzdata && \
-	apk add --update openssl && \
-    rm -rf /var/cache/apk/* && \
-	curl --version && \
-        ping -c4 localhost && \
-        nc -h
 	
+RUN apk add --update curl && \
+    rm -rf /var/cache/apk/* && \
+	curl --version
+
 # COPY ./org-cacert-bundle.crt /usr/local/share/ca-certificates/mycert.crt
 # COPY --from stage-0 /usr/local/share/ca-certificates /usr/local/share/ca-certificates
 RUN set -eux;\
@@ -65,14 +94,14 @@ ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
 
 # see https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/KEYS
 # see also "update.sh" (https://github.com/docker-library/tomcat/blob/master/update.sh)
-ENV GPG_KEYS 48F8E69F6390C9F25CFEDCD268248959359E722B A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243
+ENV GPG_KEYS 05AB33110949707C93A279E3D3EFE6B686867BA6 07E48665A34DCAFAE522E5E6266191C37C037D42 47309207D818FFD8DCD3F83F1931D684307A10A5 541FBE7D8F78B25E055DDEE13C370389288584E7 61B832AC2F1C5A90F0F9B00A1C506407564C17A3 79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED 9BA44C2621385CB966EBA586F72C284D731FABEE A27677289986DB50844682F8ACB77FC2E86E29AC A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243 F3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE F7DA48BB64BCB84ECBA7EE6935CD23C10D498E23
 
 ENV TOMCAT_MAJOR 9
-ENV TOMCAT_VERSION 9.0.65
+ENV TOMCAT_VERSION 9.0.55
 ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
 ENV TOMCAT_SHA512_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
 # https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
-# ENV TOMCAT_SHA512 b6a707efcf23ac4d8506925146e0344c9f9b4e95c3a8fe56f3adfa9d7d912f0a0e458f6696d465607d2d531d7c0ef1afd5da206bb21bea47a13ae452d4f37f8e
+# ENV TOMCAT_SHA512 a0c480b8bba09069bda3b57f54e658450a59d799474ad587dead0ffbf5074c16ee3f9f9c13312d0ff3227c7034589dabf25941fbd672838e9baeee9661e024dc
 
 # Install Tomcat
 RUN set -eux;\
