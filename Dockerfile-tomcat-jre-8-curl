@@ -1,14 +1,14 @@
-# docker build -t sathya/tomcat-custom:9.0.55.0-alpine-jre-1.8.0-302-08-r0 . -f Dockerfile-tomcat-jre-8-curl --no-cache
+# docker build -t bnppwmis/tomcat-custom:9.0.65.0-alpine-jre-1.8.0-322-06-r0 . -f Dockerfile-tomcat-jre-8-curl --no-cache
 FROM alpine:latest
 MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.14"
+ENV OS_RELEASE="Alpine Linux v3.16"
 
 # Installed main dependencies:
-#  ca-certificates-bundle-20191127-r5 x86_64: for certificate management to support SSL
+#  ca-certificates-20211220-r0 x86_64:  for certificate management to support SSL
 #  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
 #                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
-#  fontconfig-2.13.1-r4 x86_64 : For supporting UI/ Fonts for reporting purposes
-#  freetype-2.10.4-r1 x86_64: To support freetype fonts
+#  fontconfig-2.14.0-r0 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.12.1-r0 x86_64: To support freetype fonts
 #  Tomcat: Java Runtime Container
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
@@ -16,7 +16,7 @@ ENV OS_RELEASE="Alpine Linux v3.14"
 ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 RUN apk --no-cache --virtual add openjdk8-jre --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=1.8.0_302-b08
+ENV JAVA_VERSION=1.8.0_322-b06
 RUN set -eux;\
     apk update \
     && apk upgrade \
@@ -33,8 +33,14 @@ RUN set -eux;\
     && rm -rf /var/cache/apk/*
 
 RUN apk add --update curl && \
+    apk add --update iputils && \
+    apk add --update netcat-openbsd && \
+	apk add --update tzdata && \
+	apk add --update openssl && \
     rm -rf /var/cache/apk/* && \
-	curl --version
+	curl --version && \
+        ping -c4 localhost && \
+        nc -h
 	
 # COPY ./org-cacert-bundle.crt /usr/local/share/ca-certificates/mycert.crt
 # COPY --from stage-0 /usr/local/share/ca-certificates /usr/local/share/ca-certificates
@@ -62,11 +68,11 @@ ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
 ENV GPG_KEYS 48F8E69F6390C9F25CFEDCD268248959359E722B A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243
 
 ENV TOMCAT_MAJOR 9
-ENV TOMCAT_VERSION 9.0.55
+ENV TOMCAT_VERSION 9.0.65
 ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
 ENV TOMCAT_SHA512_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
 # https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
-# ENV TOMCAT_SHA512 a0c480b8bba09069bda3b57f54e658450a59d799474ad587dead0ffbf5074c16ee3f9f9c13312d0ff3227c7034589dabf25941fbd672838e9baeee9661e024dc 
+# ENV TOMCAT_SHA512 b6a707efcf23ac4d8506925146e0344c9f9b4e95c3a8fe56f3adfa9d7d912f0a0e458f6696d465607d2d531d7c0ef1afd5da206bb21bea47a13ae452d4f37f8e
 
 # Install Tomcat
 RUN set -eux;\
