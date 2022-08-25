@@ -1,4 +1,4 @@
-# docker build -t sathya1104/tomcat-custom:9.0.65.0-alpine-jre-17.0.0-r1 . -f Dockerfile-tomcat-jre-17-curl --no-cache
+# docker build -t sathya1104/tomcat-custom:9.0.65.0-alpine-jre-17.0.4-r0 . -f Dockerfile-tomcat-jre-17-curl --no-cache
 FROM alpine:latest AS stage-0
 # Prefer openjdk11 over openjdk11-jre for jlink and we can use it remove more default modules and reduce image size
 RUN set -eux;\
@@ -6,18 +6,18 @@ RUN set -eux;\
      --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing
 WORKDIR /usr/lib/jvm/default-jvm/jre/bin/
 RUN set -eux;\
-  ./jlink --output jre --compress=2 --no-header-files --no-man-pages --module-path ../jmods --add-modules jdk.crypto.ec,java.desktop,jdk.aot,jdk.xml.dom,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.smartcardio,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto
+  ./jlink --output jre --compress=2 --no-header-files --no-man-pages --module-path ../jmods --add-modules jdk.crypto.ec,java.desktop,jdk.xml.dom,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.smartcardio,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto
 
 FROM alpine:latest
 MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.15"
+ENV OS_RELEASE="Alpine Linux v3.16"
 
 # Installed main dependencies:
 #  ca-certificates-bundle-20211220-r0 x86_64: for certificate management to support SSL
-#  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
+#  openjdk11-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
 #                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
-#  fontconfig-2.13.1-r4 x86_64 : For supporting UI/ Fonts for reporting purposes
-#  freetype-2.11.0-r0 x86_64: To support freetype fonts
+#  fontconfig-2.14.0-r0 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.12.1-r0 x86_64: To support freetype fonts
 #  Tomcat: Java Runtime Container
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
@@ -25,7 +25,7 @@ ENV OS_RELEASE="Alpine Linux v3.15"
 ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=17.0.0+35-alpine-r1
+ENV JAVA_VERSION=17.0.4.1+1-alpine-r0
 COPY Dockerfile-tomcat-jre-17-curl /tmp
 
 RUN set -eux;\
@@ -80,11 +80,11 @@ ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
 ENV GPG_KEYS 48F8E69F6390C9F25CFEDCD268248959359E722B A9C5DF4D22E99998D9875A5110C01C5A2F6059E7
 
 ENV TOMCAT_MAJOR 9
-ENV TOMCAT_VERSION 9.0.58
+ENV TOMCAT_VERSION 9.0.65
 ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
 ENV TOMCAT_SHA512_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
 # https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
-# ENV TOMCAT_SHA512 83430f24d42186ce2ff51eeef2f7a5517048f37d9050c45cac1e3dba8926d61a1f7f5aba122a34a11ac1dbdd3c1f6d98671841047df139394d43751263de57c3
+# ENV TOMCAT_SHA512 2ae846848b8436856be11cfa18d9c62caa06ca7d3134012b2e10cbf6078753c4af20cc5d37f7dc75f1779f5c59d7c033850b8626534c3ce7e389641a67963cf6
 
 # Install Tomcat
 RUN set -eux;\
