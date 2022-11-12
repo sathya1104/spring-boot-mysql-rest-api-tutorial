@@ -1,0 +1,92 @@
+# docker build -t bnppwmis/openjdk:17-alpine . -f Dockerfile-openjdk17-curl --no-cache
+FROM alpine:latest AS stage-0
+# Prefer openjdk17 over openjdk17-jre for jlink and we can use it remove more default modules and reduce image size
+RUN set -eux;\
+ apk --no-cache --virtual add openjdk17 \
+     --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing
+WORKDIR /usr/lib/jvm/default-jvm/jre/bin/
+RUN set -eux;\
+  ./jlink --output jre --compress=2 --no-header-files --no-man-pages --module-path ../jmods --add-modules jdk.crypto.ec,java.desktop,jdk.xml.dom,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.smartcardio,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto
+COPY Dockerfile-openjdk17-curl /tmp
+
+FROM alpine:latest
+MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
+ENV OS_RELEASE="Alpine Linux v3.16.2"
+
+# Installed main dependencies:
+#  ca-certificates-bundle-20220614-r0 x86_64: for certificate management to support SSL
+#  openjdk11-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
+#                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
+#  fontconfig-2.14.0-r0 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.12.1-r0 x86_64: To support freetype fonts
+#  Tomcat: Java Runtime Container
+
+# https://adoptopenjdk.net/installation.html#x64_linux-jre
+# Set JRE_HOME not JAVA_HOME as we don't intend to run tomcat in debug mode
+ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
+COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
+COPY --from=stage-0 /tmp/Dockerfile-openjdk17-curl /tmp
+ENV PATH=${JRE_HOME}/bin:$PATH
+ENV JAVA_VERSION=17.0.5+8-alpine-r0
+
+RUN set -eux;\
+    apk update \
+    && apk upgrade \
+    # Now Add Support for cacerts
+    # https://hackernoon.com/alpine-docker-image-with-secured-communication-ssl-tls-go-restful-api-128eb6b54f1f
+    && apk add --no-cache ca-certificates\
+
+    # Now Add Support for UI/Font configurations
+    # java.lang.UnsatisfiedLinkError: /usr/local/openjdk-11/lib/libfontmanager.so: libfreetype.so.6: cannot open shared object file: No such file or directory
+    # java.lang.NoClassDefFoundError: Could not initialize class sun.awt.X11FontManager
+    # https://github.com/docker-library/openjdk/pull/235#issuecomment-424466077
+     \fontconfig freetype\
+
+    && rm -rf /var/cache/apk/*
+	
+RUN apk add --update curl && \
+    apk add --update iputils && \
+    apk add --update netcat-openbsd && \
+	apk add --update tzdata && \
+	apk add --update openssl && \
+	apk add --update lcms2 && \
+    rm -rf /var/cache/apk/* && \
+	curl --version && \
+        ping -c4 localhost && \
+        nc -h
+
+# COPY ./org-cacert-bundle.crt /usr/local/share/ca-certificates/mycert.crt
+# COPY --from stage-0 /usr/local/share/ca-certificates /usr/local/share/ca-certificates
+RUN set -eux;\
+    chmod 755 /usr/local/share/ca-certificates\
+    && update-ca-certificates\
+    # Load Organisational fonts
+    && mkdir -p /usr/share/fonts/default/TrueType
+# COPY --from stage-0 /tmp/custom-fonts/ /usr/share/fonts/default/TrueType
+
+# User Management
+# Add custom group openjre with 1001 as a groupid to avoid conflicts with any existing groups
+RUN addgroup -g 1001 openjre
+
+# Add custom user openjre with same uid 1001 as gid to avoid conflict with exist user
+# User with no home directory, no password, group as openjre and username as openjre
+RUN adduser -H -D -G openjre -u 1001 openjre
+
+# We put the openjre user as the owner of the folder of openjre to limit access to openjre process on container resources
+RUN set -eux;\
+    mkdir -p /usr/local/opt\
+	&& mkdir -p /usr/local/log\
+    && chown -R openjre:openjre /usr/local/opt\
+    # Users cannot modify configuration of openjre
+    && chmod -R g+w /usr/local/log\
+    # Activate the sticky-bit for new files keep permissions defined:
+    && chmod -R g+s /usr/local/opt\
+    && chmod -R g+s /usr/local/log
+
+
+# Set user as tocmat by uid to be compatible with kubernetes psp
+USER 1001
+
+EXPOSE 8080
+
+CMD ["jshell"]
