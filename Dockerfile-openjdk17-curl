@@ -1,4 +1,4 @@
-# docker build -t bnppwmis/openjdk:17-alpine . -f Dockerfile-openjdk17-curl --no-cache
+# docker build -t sathya1104/openjdk:17-alpine . -f Dockerfile-openjdk17-curl --no-cache
 FROM alpine:latest AS stage-0
 # Prefer openjdk17 over openjdk17-jre for jlink and we can use it remove more default modules and reduce image size
 RUN set -eux;\
@@ -11,15 +11,16 @@ COPY Dockerfile-openjdk17-curl /tmp
 
 FROM alpine:latest
 MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.16.2"
+ENV OS_RELEASE="Alpine Linux v3.17.1"
 
 # Installed main dependencies:
-#  ca-certificates-bundle-20220614-r0 x86_64: for certificate management to support SSL
-#  openjdk11-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
+#  ca-certificates-bundle-20220614-r4 x86_64: for certificate management to support SSL
+#  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
 #                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
-#  fontconfig-2.14.0-r0 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  fontconfig-2.14.1-r0 x86_64 : For supporting UI/ Fonts for reporting purposes
 #  freetype-2.12.1-r0 x86_64: To support freetype fonts
-#  Tomcat: Java Runtime Container
+#  openjre: Java Runtime Container
+
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
 # Set JRE_HOME not JAVA_HOME as we don't intend to run tomcat in debug mode
@@ -27,7 +28,7 @@ ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
 COPY --from=stage-0 /tmp/Dockerfile-openjdk17-curl /tmp
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=17.0.5+8-alpine-r0
+ENV JAVA_VERSION=17.0.5+8-alpine-r2
 
 RUN set -eux;\
     apk update \

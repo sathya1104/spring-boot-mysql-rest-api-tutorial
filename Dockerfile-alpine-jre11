@@ -1,4 +1,4 @@
-# docker build -t sathya1104/tomcat-custom:9.0.44.0-alpine-jre-11.0.10 . -f Dockerfile-tomcat-jre --no-cache
+# docker build -t alpine-jre11 . -f Dockerfile-alpine-jre11 --no-cache
 FROM alpine:latest AS stage-0
 # Prefer openjdk11 over openjdk11-jre for jlink and we can use it remove more default modules and reduce image size
 RUN set -eux;\
