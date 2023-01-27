@@ -23,7 +23,6 @@ WORKDIR /root
 RUN set -eux;\
     mkdir -p target/alpine-linux/x64/hotspot/ \
     && wget "$JDK_DOWNLOAD_URL" -qO target/alpine-linux/x64/hotspot/OpenJDK17-jdk_x64_alpine-linux_hotspot_${JDK_VERSION}.tar.gz\
-#    && wget -qO- "$JDK_SHA512_URL" | sha512sum -c -\
     && tar -xf target/alpine-linux/x64/hotspot/OpenJDK17-jdk_x64_alpine-linux_hotspot_${JDK_VERSION}.tar.gz --strip-components=1
 
 RUN set -eux \
@@ -68,8 +67,15 @@ RUN set -eux;\
     && rm -rf /var/cache/apk/*
 	
 RUN apk add --update curl && \
+    apk add --update iputils && \
+    apk add --update netcat-openbsd && \
+	apk add --update tzdata && \
+	apk add --update openssl && \
+	apk add --update lcms2 && \
     rm -rf /var/cache/apk/* && \
-	curl --version
+	curl --version && \
+        ping -c4 localhost && \
+        nc -h
 
 # COPY ./org-cacert-bundle.crt /usr/local/share/ca-certificates/mycert.crt
 # COPY --from stage-0 /usr/local/share/ca-certificates /usr/local/share/ca-certificates

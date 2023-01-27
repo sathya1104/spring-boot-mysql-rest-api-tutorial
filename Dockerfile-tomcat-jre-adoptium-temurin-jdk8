@@ -1,16 +1,33 @@
-# docker build -t sathya1104/tomcat-custom:9.0.71.0-alpine-jre-11.0.18.10-r0 . -f Dockerfile-tomcat-jre-curl --no-cache
-FROM alpine:latest AS stage-0
-# Prefer openjdk11 over openjdk11-jre for jlink and we can use it remove more default modules and reduce image size
-RUN set -eux;\
- apk --no-cache --virtual add openjdk11 \
-     --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
-WORKDIR /usr/lib/jvm/default-jvm/jre/bin/
-RUN set -eux;\
-    ./jlink --output jre --compress=2 --no-header-files --no-man-pages --module-path ../jmods --add-modules jdk.crypto.ec,java.desktop,jdk.aot,jdk.xml.dom,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.smartcardio,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto
+# docker build -t sathya1104/tomcat-custom:9.0.71.0-alpine-temurin-jre-8.0.362-r1 . -f Dockerfile-tomcat-jre-adoptium-temurin-jdk8 --no-cache
 
 FROM alpine:latest
-MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.17.1"
+
+# Download jdk binary from temurin github (in future add sha checksum verification)
+# Use jlink and we can use it remove more default modules and reduce image size
+
+# see https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/KEYS
+# see also "update.sh" (https://github.com/docker-library/tomcat/blob/master/update.sh)
+
+
+ENV JDK_MAJOR 8
+ENV JDK_VERSION 8u362b09
+ENV JDK_PATCH_VERSION jdk8u362
+ENV JDK_BUILD_VERSION b09
+
+ENV JDK_DOWNLOAD_URL https://github.com/adoptium/temurin8-binaries/releases/download/${JDK_PATCH_VERSION}-${JDK_BUILD_VERSION}/OpenJDK8U-jdk_x64_alpine-linux_hotspot_${JDK_VERSION}.tar.gz
+
+WORKDIR /root
+
+# Download JDK
+RUN set -eux;\
+    mkdir -p /usr/lib/jvm/default-jvm/ \
+    && wget "$JDK_DOWNLOAD_URL" -qO /usr/lib/jvm/default-jvm/OpenJDK8-jdk_x64_alpine-linux_hotspot_${JDK_VERSION}.tar.gz\
+    && tar -xf /usr/lib/jvm/default-jvm/OpenJDK8-jdk_x64_alpine-linux_hotspot_${JDK_VERSION}.tar.gz -C /usr/lib/jvm/default-jvm/ --strip-components=1\
+	&& rm -rf /usr/lib/jvm/default-jvm/OpenJDK8-jdk_x64_alpine-linux_hotspot_${JDK_VERSION}.tar.gz
+
+
+
+ENV OS_RELEASE="Alpine Linux v3.17"
 
 # Installed main dependencies:
 #  ca-certificates-bundle-20220614-r4 x86_64: for certificate management to support SSL
@@ -23,17 +40,20 @@ ENV OS_RELEASE="Alpine Linux v3.17.1"
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
 # Set JRE_HOME not JAVA_HOME as we don't intend to run tomcat in debug mode
 ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
-COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
-COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/lib/server/libjvm.so /usr/lib/jvm/default-jvm/jre/lib
+COPY Dockerfile-tomcat-jre-adoptium-temurin-jdk8 /tmp
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=11.0.18+10-alpine-r0
+ENV JAVA_VERSION=1.8.0_362
 
 RUN set -eux;\
-    apk update \
-    && apk upgrade \
+
+    # CIS-4.7 Ensure update instructions are not use alone in the Dockerfile
+    # apk update \
+    # && apk upgrade \
+    # && apk add --no-cache ca-certificates\
+
     # Now Add Support for cacerts
     # https://hackernoon.com/alpine-docker-image-with-secured-communication-ssl-tls-go-restful-api-128eb6b54f1f
-    && apk add --no-cache ca-certificates\
+    apk add --no-cache ca-certificates\
 
     # Now Add Support for UI/Font configurations
     # java.lang.UnsatisfiedLinkError: /usr/local/openjdk-11/lib/libfontmanager.so: libfreetype.so.6: cannot open shared object file: No such file or directory
@@ -53,7 +73,7 @@ RUN apk add --update curl && \
 	curl --version && \
         ping -c4 localhost && \
         nc -h
-		
+
 # COPY ./org-cacert-bundle.crt /usr/local/share/ca-certificates/mycert.crt
 # COPY --from stage-0 /usr/local/share/ca-certificates /usr/local/share/ca-certificates
 RUN set -eux;\
