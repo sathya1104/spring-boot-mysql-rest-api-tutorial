@@ -4,9 +4,10 @@ FROM alpine:latest
 
 # Download jdk binary from temurin github (in future add sha checksum verification)
 # Use jlink and we can use it remove more default modules and reduce image size
-
+# https://github.com/adoptium/adoptium-support/issues/619
 # see https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/KEYS
 # see also "update.sh" (https://github.com/docker-library/tomcat/blob/master/update.sh)
+# https://github.com/adoptium/temurin8-binaries/releases
 
 
 ENV JDK_MAJOR 8
@@ -80,7 +81,11 @@ RUN set -eux;\
     chmod 755 /usr/local/share/ca-certificates\
     && update-ca-certificates\
     # Load Organisational fonts
-    && mkdir -p /usr/share/fonts/default/TrueType
+    && mkdir -p /usr/share/fonts/default/TrueType\
+	&& mkdir -p /etc/ssl/certs/java\
+	&& chmod 755 /etc/ssl/certs/java\
+	&& ln -s /usr/lib/jvm/default-jvm/jre/lib/security/cacerts /etc/ssl/certs/java/cacerts\
+	&& chmod 444 /etc/ssl/certs/java/cacerts
 # COPY --from stage-0 /tmp/custom-fonts/ /usr/share/fonts/default/TrueType
 
 

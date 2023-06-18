@@ -1,7 +1,7 @@
 # docker build -t sathya1104/openjdk:8-alpine . -f Dockerfile-openjdk8-curl --no-cache
 FROM alpine:latest
 MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.17.1"
+ENV OS_RELEASE="Alpine Linux v3.17.3"
 COPY Dockerfile-openjdk8-curl /tmp
 
 # Installed main dependencies:
@@ -17,7 +17,7 @@ COPY Dockerfile-openjdk8-curl /tmp
 ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 RUN apk --no-cache --virtual add openjdk8-jre --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=1.8.0_345-b01
+ENV JAVA_VERSION=1.8.0_362-b09
 RUN set -eux;\
     apk update \
     && apk upgrade \

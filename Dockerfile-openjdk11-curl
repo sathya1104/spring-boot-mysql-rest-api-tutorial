@@ -11,7 +11,7 @@ COPY Dockerfile-openjdk11-curl /tmp
 
 FROM alpine:latest
 MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.17.1"
+ENV OS_RELEASE="Alpine Linux v3.17.3"
 
 # Installed main dependencies:
 #  ca-certificates-bundle-20220614-r4 x86_64: for certificate management to support SSL
@@ -31,7 +31,7 @@ COPY --from=stage-0 /tmp/Dockerfile-openjdk11-curl /tmp
 
 ENV PATH=${JRE_HOME}/bin:$PATH
 ENV PATH=${JAVA_HOME}/bin:$PATH
-ENV JAVA_VERSION=11.0.17+8-alpine-r3
+ENV JAVA_VERSION=11.0.18+10-alpine-r0
 
 RUN set -eux;\
     apk update \

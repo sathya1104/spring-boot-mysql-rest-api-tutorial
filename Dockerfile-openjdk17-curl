@@ -28,7 +28,7 @@ ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
 COPY --from=stage-0 /tmp/Dockerfile-openjdk17-curl /tmp
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=17.0.5+8-alpine-r2
+ENV JAVA_VERSION=17.0.6+10-alpine-r0
 
 RUN set -eux;\
     apk update \
