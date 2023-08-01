@@ -1,4 +1,4 @@
-# docker build -t sathya1104/tomcat-custom:9.0.74.0-alpine-jre-11.0.18.10-r0 . -f Dockerfile-tomcat-jre-curl --no-cache
+# docker build -t bnpparibasorg/wmiswarbase:9.0.78.0-alpine-jre-11.0.20.8-r1 . -f Dockerfile-tomcat-jre-curl --no-cache
 FROM alpine:latest AS stage-0
 # Prefer openjdk11 over openjdk11-jre for jlink and we can use it remove more default modules and reduce image size
 RUN set -eux;\
@@ -9,15 +9,17 @@ RUN set -eux;\
     ./jlink --output jre --compress=2 --no-header-files --no-man-pages --module-path ../jmods --add-modules jdk.crypto.ec,java.desktop,jdk.aot,jdk.xml.dom,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.smartcardio,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto
 
 FROM alpine:latest
-MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.17.3"
+MAINTAINER "SathyaNarayanan K"
+ENV OS_RELEASE="Alpine Linux v3.18"
+
+COPY Dockerfile-tomcat-jre-curl /tmp
 
 # Installed main dependencies:
-#  ca-certificates-bundle-20220614-r4 x86_64: for certificate management to support SSL
+#  ca-certificates-bundle-20230506-r0 x86_64: for certificate management to support SSL
 #  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
 #                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
-#  fontconfig-2.14.1-r0 x86_64 : For supporting UI/ Fonts for reporting purposes
-#  freetype-2.12.1-r0 x86_64: To support freetype fonts
+#  fontconfig-2.14.2-r3 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.13.1-r5 x86_64: To support freetype fonts
 #  openjre: Java Runtime Container
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
@@ -26,21 +28,14 @@ ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
 COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/lib/server/libjvm.so /usr/lib/jvm/default-jvm/jre/lib
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=11.0.18+10-alpine-r0
+ENV JAVA_VERSION=11.0.20+8-alpine-r1
 
 RUN set -eux;\
     apk update \
     && apk upgrade \
-    # Now Add Support for cacerts
-    # https://hackernoon.com/alpine-docker-image-with-secured-communication-ssl-tls-go-restful-api-128eb6b54f1f
     && apk add --no-cache ca-certificates\
-
-    # Now Add Support for UI/Font configurations
-    # java.lang.UnsatisfiedLinkError: /usr/local/openjdk-11/lib/libfontmanager.so: libfreetype.so.6: cannot open shared object file: No such file or directory
-    # java.lang.NoClassDefFoundError: Could not initialize class sun.awt.X11FontManager
-    # https://github.com/docker-library/openjdk/pull/235#issuecomment-424466077
-     \fontconfig freetype\
-
+	&& apk add --no-cache fontconfig\
+	&& apk add --no-cache freetype\
     && rm -rf /var/cache/apk/*
 	
 RUN apk add --update curl && \
@@ -80,11 +75,11 @@ ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
 ENV GPG_KEYS 48F8E69F6390C9F25CFEDCD268248959359E722B A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243
 
 ENV TOMCAT_MAJOR 9
-ENV TOMCAT_VERSION 9.0.74
+ENV TOMCAT_VERSION 9.0.78
 ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
 ENV TOMCAT_SHA512_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
 # https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
-# ENV TOMCAT_SHA512 6a747e68eff4b68a8defba111103ef6b1606030c180143de0419d015052a5567fca1a86e3d3e058a10246c02b98e89431e9344f80475189573fa0d5c70bfb4cb 
+# ENV TOMCAT_SHA512 c9f2e60489d07f25b53f715918f4b082c5bb69dbc497e0a9d3d5e3a0d351ff2e0ec8dfc5657de840ee5b3dea6174b27630033b38e36fa4c06b08664e70dec8df  
 
 # Install Tomcat
 RUN set -eux;\

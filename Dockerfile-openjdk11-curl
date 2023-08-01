@@ -1,4 +1,4 @@
-# docker build -t sathya1104/openjdk:11-alpine . -f Dockerfile-openjdk11-curl --no-cache
+# docker build -t bnpparibasorg/wmisjarbase:11-alpine . -f Dockerfile-openjdk11-curl --no-cache
 FROM alpine:latest AS stage-0
 # Prefer openjdk11 over openjdk11-jre for jlink and we can use it remove more default modules and reduce image size
 RUN set -eux;\
@@ -11,15 +11,18 @@ COPY Dockerfile-openjdk11-curl /tmp
 
 FROM alpine:latest
 MAINTAINER "Sathya KUMARASWAMY <sathya1104@gmail.com>"
-ENV OS_RELEASE="Alpine Linux v3.17.3"
+ENV OS_RELEASE="Alpine Linux v3.18"
+
+COPY Dockerfile-openjdk11-curl /tmp
 
 # Installed main dependencies:
-#  ca-certificates-bundle-20220614-r4 x86_64: for certificate management to support SSL
+#  ca-certificates-bundle-20230506-r0 x86_64: for certificate management to support SSL
 #  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
 #                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
-#  fontconfig-2.14.1-r0 x86_64 : For supporting UI/ Fonts for reporting purposes
-#  freetype-2.12.1-r0 x86_64: To support freetype fonts
+#  fontconfig-2.14.2-r3 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.13.1-r5 x86_64: To support freetype fonts
 #  openjre: Java Runtime Container
+
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
 # Set JRE_HOME not JAVA_HOME as we don't intend to run openjdk in debug mode
 ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk
@@ -31,21 +34,14 @@ COPY --from=stage-0 /tmp/Dockerfile-openjdk11-curl /tmp
 
 ENV PATH=${JRE_HOME}/bin:$PATH
 ENV PATH=${JAVA_HOME}/bin:$PATH
-ENV JAVA_VERSION=11.0.18+10-alpine-r0
+ENV JAVA_VERSION=11.0.20+8-alpine-r1
 
 RUN set -eux;\
     apk update \
     && apk upgrade \
-    # Now Add Support for cacerts
-    # https://hackernoon.com/alpine-docker-image-with-secured-communication-ssl-tls-go-restful-api-128eb6b54f1f
     && apk add --no-cache ca-certificates\
-
-    # Now Add Support for UI/Font configurations
-    # java.lang.UnsatisfiedLinkError: /usr/local/openjdk-11/lib/libfontmanager.so: libfreetype.so.6: cannot open shared object file: No such file or directory
-    # java.lang.NoClassDefFoundError: Could not initialize class sun.awt.X11FontManager
-    # https://github.com/docker-library/openjdk/pull/235#issuecomment-424466077
-     \fontconfig freetype\
-
+	&& apk add --no-cache fontconfig\
+	&& apk add --no-cache freetype\
     && rm -rf /var/cache/apk/*
 	
 RUN apk add --update curl && \
