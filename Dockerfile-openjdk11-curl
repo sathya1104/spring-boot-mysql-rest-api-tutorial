@@ -42,6 +42,8 @@ RUN set -eux;\
     && apk add --no-cache ca-certificates\
 	&& apk add --no-cache fontconfig\
 	&& apk add --no-cache freetype\
+        && apk add --no-cache bash\
+        && apk add --no-cache jq\
     && rm -rf /var/cache/apk/*
 	
 RUN apk add --update curl && \
