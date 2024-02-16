@@ -1,4 +1,4 @@
-# docker build -t bnpparibasorg/wmiswarbase:9.0.78.0-alpine-jre-11.0.20.8-r1 . -f Dockerfile-tomcat-jre-curl --no-cache
+# docker build -t bnpparibasorg/wmiswarbase:9.0.85.0-alpine-jre-11.0.22.7-r0 . -f Dockerfile-tomcat-jre-curl --no-cache
 FROM alpine:latest AS stage-0
 # Prefer openjdk11 over openjdk11-jre for jlink and we can use it remove more default modules and reduce image size
 RUN set -eux;\
@@ -10,7 +10,7 @@ RUN set -eux;\
 
 FROM alpine:latest
 MAINTAINER "SathyaNarayanan K"
-ENV OS_RELEASE="Alpine Linux v3.18"
+ENV OS_RELEASE="Alpine Linux v3.19"
 
 COPY Dockerfile-tomcat-jre-curl /tmp
 
@@ -18,8 +18,8 @@ COPY Dockerfile-tomcat-jre-curl /tmp
 #  ca-certificates-bundle-20230506-r0 x86_64: for certificate management to support SSL
 #  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
 #                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
-#  fontconfig-2.14.2-r3 x86_64 : For supporting UI/ Fonts for reporting purposes
-#  freetype-2.13.1-r5 x86_64: To support freetype fonts
+#  fontconfig-2.14.2-r4 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.13.4-r4 x86_64: To support freetype fonts
 #  openjre: Java Runtime Container
 
 # https://adoptopenjdk.net/installation.html#x64_linux-jre
@@ -28,7 +28,7 @@ ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
 COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/lib/server/libjvm.so /usr/lib/jvm/default-jvm/jre/lib
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=11.0.20+8-alpine-r1
+ENV JAVA_VERSION=11.0.22+7-alpine-r0
 
 RUN set -eux;\
     apk update \
@@ -75,7 +75,7 @@ ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
 ENV GPG_KEYS 48F8E69F6390C9F25CFEDCD268248959359E722B A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243
 
 ENV TOMCAT_MAJOR 9
-ENV TOMCAT_VERSION 9.0.78
+ENV TOMCAT_VERSION 9.0.85
 ENV TOMCAT_DOWNLOAD_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
 ENV TOMCAT_SHA512_URL https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512
 # https://downloads.apache.org/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz.sha512

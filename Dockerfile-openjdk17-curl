@@ -11,7 +11,7 @@ COPY Dockerfile-openjdk17-curl /tmp
 
 FROM alpine:latest
 MAINTAINER "SathyaNarayanan K"
-ENV OS_RELEASE="Alpine Linux v3.18"
+ENV OS_RELEASE="Alpine Linux v3.19"
 
 COPY Dockerfile-openjdk17-curl /tmp
 
@@ -19,8 +19,8 @@ COPY Dockerfile-openjdk17-curl /tmp
 #  ca-certificates-bundle-20230506-r0 x86_64: for certificate management to support SSL
 #  openjdk8-jre: OpenJDK built by Timo Teräs <timo.teras@iki.fi> from https://icedtea.classpath.org/
 #                               https://git.alpinelinux.org/aports/commit/?id=f10a27abc4a038853c5b0f74655a1ca75356c93a
-#  fontconfig-2.14.2-r3 x86_64 : For supporting UI/ Fonts for reporting purposes
-#  freetype-2.13.1-r5 x86_64: To support freetype fonts
+#  fontconfig-2.14.2-r4 x86_64 : For supporting UI/ Fonts for reporting purposes
+#  freetype-2.13.4-r4 x86_64: To support freetype fonts
 #  openjre: Java Runtime Container
 
 
@@ -30,7 +30,7 @@ ENV JRE_HOME=/usr/lib/jvm/default-jvm/jre
 COPY --from=stage-0 /usr/lib/jvm/default-jvm/jre/bin/jre ${JRE_HOME}
 COPY --from=stage-0 /tmp/Dockerfile-openjdk17-curl /tmp
 ENV PATH=${JRE_HOME}/bin:$PATH
-ENV JAVA_VERSION=17.0.8+7-alpine-r1
+ENV JAVA_VERSION=17.0.10+7-alpine-r0
 
 RUN set -eux;\
     apk update \
